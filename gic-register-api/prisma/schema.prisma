@@ -1,0 +1,363 @@
+// Prisma schema for Church Workforce & Member Management Platform
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ─────────────────────────────────────────────────────────────────────
+
+enum Role {
+  MEMBER
+  WORKER
+  LEADER
+  DIRECTORATE
+  ADMIN
+}
+
+enum AdminSubRole {
+  LEAD_PASTOR
+  ADMIN_PASTOR
+  SECRETARY
+}
+
+enum WorkerStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  NONE
+}
+
+enum CheckInType {
+  WORKER
+  MEMBER
+}
+
+enum PermissionStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum PaymentMethod {
+  BANK
+  CRYPTO
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+}
+
+enum NewsVisibility {
+  PUBLIC
+  WORKERS_ONLY
+}
+
+enum ResourceType {
+  MESSAGE
+  BOOK
+}
+
+// ─── USER MODEL ────────────────────────────────────────────────────────────────
+
+model User {
+  id                   String          @id @default(uuid())
+  email                String          @unique
+  passwordHash         String
+  fullName             String
+  role                 Role            @default(MEMBER)
+  adminSubRole         AdminSubRole?
+  workerStatus         WorkerStatus    @default(NONE)
+  dateOfBirth          DateTime?
+  phone                String?
+  address              String?
+  photoUrl             String?
+  occupation           String?
+  primaryServiceUnit   String?
+  secondaryServiceUnit String?
+
+  // Organizational hierarchy
+  unitId               String?
+  directorateId        String?
+
+  // Status flags
+  isSuspended          Boolean         @default(false)
+  suspensionReason     String?
+
+  // Marketing preferences
+  marketingOptInEmail  Boolean         @default(false)
+  marketingOptInSMS    Boolean         @default(false)
+
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  // Relations
+  unit                 Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  directorate          Directorate?    @relation("DirectorateMembers", fields: [directorateId], references: [id], onDelete: SetNull)
+  attendances          Attendance[]
+  trainingProgress     WorkerTrainingProgress[]
+  createdEvents        Event[]         @relation("EventCreator")
+  refreshTokens        RefreshToken[]
+  permissionRequests   PermissionRequest[] @relation("PermissionRequester")
+  approvedPermissions  PermissionRequest[] @relation("PermissionApprover")
+  titheOfferings       TitheOffering[]
+  newsPosts            NewsPost[]
+  notifications        AdminNotification[]
+
+  @@index([email])
+  @@index([role])
+  @@index([workerStatus])
+  @@index([unitId])
+  @@index([directorateId])
+  @@index([isSuspended])
+}
+
+// ─── AUTH ───────────────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  revoked    Boolean  @default(false)
+  replacedBy String?
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ─── ORGANIZATIONAL HIERARCHY ──────────────────────────────────────────────────
+
+model Directorate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  units       Unit[]
+  members     User[]   @relation("DirectorateMembers")
+
+  @@index([name])
+}
+
+model Unit {
+  id            String      @id @default(uuid())
+  name          String
+  directorateId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  directorate   Directorate @relation(fields: [directorateId], references: [id], onDelete: Restrict)
+  members       User[]
+
+  @@unique([name, directorateId])
+  @@index([directorateId])
+}
+
+// ─── ATTENDANCE ────────────────────────────────────────────────────────────────
+
+model Attendance {
+  id          String      @id @default(uuid())
+  userId      String
+  eventId     String?
+  date        DateTime    @default(now()) @db.Date
+  checkInTime DateTime    @default(now())
+  checkInType CheckInType @default(WORKER)
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event       Event?      @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([date])
+  @@index([checkInType])
+}
+
+// ─── TRAINING ──────────────────────────────────────────────────────────────────
+
+model TrainingModule {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  order       Int       @default(0)
+  isMandatory Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  progress    WorkerTrainingProgress[]
+
+  @@index([order])
+}
+
+model WorkerTrainingProgress {
+  id               String         @id @default(uuid())
+  userId           String
+  trainingModuleId String
+  completed        Boolean        @default(false)
+  completedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingModule   TrainingModule @relation(fields: [trainingModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trainingModuleId])
+  @@index([userId])
+  @@index([trainingModuleId])
+}
+
+// ─── EVENTS ────────────────────────────────────────────────────────────────────
+
+model Event {
+  id            String       @id @default(uuid())
+  title         String
+  description   String?
+  date          DateTime     @db.Date
+  startTime     DateTime
+  endTime       DateTime
+  locationName  String
+  latitude      Float
+  longitude     Float
+  radiusMeters  Float        @default(100)
+  coverImageUrl String?
+  allowSharing  Boolean      @default(true)
+  galleryImages Json?
+  createdById   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  createdBy     User         @relation("EventCreator", fields: [createdById], references: [id])
+  attendances   Attendance[]
+
+  @@index([date])
+  @@index([createdById])
+}
+
+// ─── PERMISSION REQUESTS ───────────────────────────────────────────────────────
+
+model PermissionRequest {
+  id             String           @id @default(uuid())
+  userId         String
+  reason         String
+  startDate      DateTime         @db.Date
+  endDate        DateTime         @db.Date
+  status         PermissionStatus @default(PENDING)
+  decisionReason String?
+  approvedById   String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user           User             @relation("PermissionRequester", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy     User?            @relation("PermissionApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([approvedById])
+}
+
+// ─── TITHE & OFFERING ──────────────────────────────────────────────────────────
+
+model TitheOffering {
+  id                    String        @id @default(uuid())
+  userId                String
+  amount                Float
+  method                PaymentMethod
+  transactionReference  String?
+  cryptoWalletAddress   String?
+  proofImageUrl         String?
+  status                PaymentStatus @default(PENDING)
+  confirmedById         String?
+  confirmedAt           DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([method])
+  @@index([createdAt])
+}
+
+// ─── NEWS FEED ─────────────────────────────────────────────────────────────────
+
+model NewsPost {
+  id         String         @id @default(uuid())
+  title      String
+  content    String
+  visibility NewsVisibility @default(PUBLIC)
+  createdById String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  createdBy  User           @relation(fields: [createdById], references: [id])
+
+  @@index([visibility])
+  @@index([createdAt])
+  @@index([createdById])
+}
+
+// ─── RESOURCES ─────────────────────────────────────────────────────────────────
+
+model Resource {
+  id          String       @id @default(uuid())
+  type        ResourceType
+  title       String
+  description String?
+  fileUrl     String?
+  price       Float?
+  excerpt     String?
+  coverUrl    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ─── ADMIN NOTIFICATIONS ───────────────────────────────────────────────────────
+
+model AdminNotification {
+  id         String   @id @default(uuid())
+  title      String
+  message    String
+  targetRole Role?
+  createdById String
+  createdAt  DateTime @default(now())
+
+  createdBy  User     @relation(fields: [createdById], references: [id])
+
+  @@index([targetRole])
+  @@index([createdAt])
+  @@index([createdById])
+}
+
+// ─── CHURCH LOCATIONS ──────────────────────────────────────────────────────────
+
+model ChurchLocation {
+  id           String   @id @default(uuid())
+  name         String
+  address      String?
+  latitude     Float
+  longitude    Float
+  radiusMeters Float    @default(100)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isDefault])
+}
