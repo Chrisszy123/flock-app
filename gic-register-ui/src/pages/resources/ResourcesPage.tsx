@@ -148,7 +148,7 @@ export function ResourcesPage() {
       )}
 
       {pagination && pagination.totalPages > 1 && (
-        <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+        <Pagination page={pagination.page} totalPages={pagination.totalPages} hasNext={pagination.hasNext} hasPrev={pagination.hasPrev} onPageChange={setPage} />
       )}
 
       {/* Create Resource Modal */}

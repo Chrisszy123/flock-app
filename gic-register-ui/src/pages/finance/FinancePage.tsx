@@ -231,7 +231,7 @@ export function FinancePage() {
           </div>
         )}
         {myPagination && myPagination.totalPages > 1 && (
-          <Pagination currentPage={myPagination.page} totalPages={myPagination.totalPages} onPageChange={setPage} />
+          <Pagination page={myPagination.page} totalPages={myPagination.totalPages} hasNext={myPagination.hasNext} hasPrev={myPagination.hasPrev} onPageChange={setPage} />
         )}
       </div>
 

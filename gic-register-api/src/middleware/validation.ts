@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodType, ZodTypeDef, ZodError } from 'zod';
 import { ValidationError } from '../utils';
 
 /**
  * Validation middleware factory for request body validation
  * @param schema - Zod schema to validate against
  */
-export function validateBody<T>(schema: ZodSchema<T>) {
+export function validateBody<T>(schema: ZodType<T, ZodTypeDef, any>) {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       req.body = schema.parse(req.body);
@@ -29,7 +29,7 @@ export function validateBody<T>(schema: ZodSchema<T>) {
  * Validation middleware factory for query parameters
  * @param schema - Zod schema to validate against
  */
-export function validateQuery<T>(schema: ZodSchema<T>) {
+export function validateQuery<T>(schema: ZodType<T, ZodTypeDef, any>) {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       req.query = schema.parse(req.query) as typeof req.query;
@@ -52,7 +52,7 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
  * Validation middleware factory for URL parameters
  * @param schema - Zod schema to validate against
  */
-export function validateParams<T>(schema: ZodSchema<T>) {
+export function validateParams<T>(schema: ZodType<T, ZodTypeDef, any>) {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       req.params = schema.parse(req.params) as typeof req.params;

@@ -9,8 +9,7 @@ import {
   Clock, 
   Plus,
   Users,
-  Trash2,
-  Edit
+  Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -18,12 +17,10 @@ import { eventsApi } from '@/services/api';
 import { createEventSchema, type CreateEventFormData } from '@/lib/validators';
 import { handleApiError } from '@/lib/api';
 import { 
-  Button, 
-  Input, 
-  Card, 
-  CardHeader, 
-  CardBody, 
-  CardTitle,
+  Button,
+  Input,
+  Card,
+  CardBody,
   Modal,
   Pagination,
   LoadingSpinner,

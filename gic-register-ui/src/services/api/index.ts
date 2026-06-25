@@ -3,7 +3,7 @@ export { usersApi } from './users';
 export { attendanceApi } from './attendance';
 export { eventsApi } from './events';
 export { trainingApi } from './training';
-export { locationsApi } from './locations';
+export { locationsApi, type CreateChurchLocationInput } from './locations';
 export { workforceApi } from './workforce';
 export { permissionsApi } from './permissions';
 export { financeApi } from './finance';

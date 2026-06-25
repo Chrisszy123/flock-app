@@ -56,6 +56,7 @@ export function ProfilePage() {
   const updateMutation = useMutation({
     mutationFn: (data: UpdateProfileFormData) => usersApi.updateProfile({
       ...data,
+      dateOfBirth: data.dateOfBirth || undefined,
       phone: data.phone || null,
       address: data.address || null,
       primaryServiceUnit: data.primaryServiceUnit || null,

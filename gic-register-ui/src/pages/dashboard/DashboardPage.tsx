@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -57,7 +57,7 @@ export function DashboardPage() {
   });
 
   // Can check in query
-  const { data: canCheckInData, isLoading: canCheckInLoading, refetch: refetchCanCheckIn } = useQuery({
+  const { data: canCheckInData, refetch: refetchCanCheckIn } = useQuery({
     queryKey: ['canCheckIn', coordinates?.latitude, coordinates?.longitude, selectedEventId],
     queryFn: () => coordinates ? attendanceApi.canCheckIn({
       latitude: coordinates.latitude,

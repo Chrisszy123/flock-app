@@ -12,13 +12,11 @@ import toast from 'react-hot-toast';
 import { usersApi } from '@/services/api';
 import { handleApiError } from '@/lib/api';
 import { 
-  Button, 
-  Input, 
+  Button,
+  Input,
   Select,
-  Card, 
-  CardHeader, 
-  CardBody, 
-  CardTitle,
+  Card,
+  CardBody,
   Modal,
   Pagination,
   LoadingSpinner,

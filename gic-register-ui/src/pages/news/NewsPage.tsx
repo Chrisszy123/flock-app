@@ -125,8 +125,10 @@ export function NewsPage() {
 
       {pagination && pagination.totalPages > 1 && (
         <Pagination
-          currentPage={pagination.page}
+          page={pagination.page}
           totalPages={pagination.totalPages}
+          hasNext={pagination.hasNext}
+          hasPrev={pagination.hasPrev}
           onPageChange={setPage}
         />
       )}

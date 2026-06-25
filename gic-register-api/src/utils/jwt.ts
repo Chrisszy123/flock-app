@@ -9,7 +9,7 @@ import { AccessTokenPayload, RefreshTokenPayload } from '../types';
 export function generateAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, config.jwt.accessSecret, {
     expiresIn: config.jwt.accessExpiresIn,
-  });
+  } as jwt.SignOptions);
 }
 
 /**
@@ -19,7 +19,7 @@ export function generateAccessToken(payload: AccessTokenPayload): string {
 export function generateRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, config.jwt.refreshSecret, {
     expiresIn: config.jwt.refreshExpiresIn,
-  });
+  } as jwt.SignOptions);
 }
 
 /**
